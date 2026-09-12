@@ -405,14 +405,50 @@ else:
 print("\nDurden scan complete.")
 
 # =========================
-# TACTICAL ENGINE TEST
+# TACTICAL RADAR TEST
 # =========================
 
-print("\nTesting tactical engine...")
+print("\nTesting tactical radar...")
 
 competitions = get_competitions()
 
-print(
-    f"StatsBomb competitions available: "
-    f"{len(competitions)}"
-)
+if competitions:
+    competition = competitions[0]
+
+    competition_id = competition["competition_id"]
+    season_id = competition["season_id"]
+
+    matches = get_matches(
+        competition_id,
+        season_id
+    )
+
+    if matches:
+        match = matches[0]
+
+        match_id = match["match_id"]
+
+        events = get_events(match_id)
+
+        tactical_analysis = analyse_match_events(
+            events
+        )
+
+        print("\nTACTICAL MATCH SUMMARY:\n")
+
+        for team in tactical_analysis["passes"]:
+
+            print(
+                f"{team} | "
+                f"Passes: {tactical_analysis['passes'][team]} | "
+                f"Shots: {tactical_analysis['shots'][team]} | "
+                f"Goals: {tactical_analysis['goals'][team]} | "
+                f"Pressures: {tactical_analysis['pressures'][team]} | "
+                f"Carries: {tactical_analysis['carries'][team]}"
+            )
+
+    else:
+        print("No tactical matches found.")
+
+else:
+    print("No StatsBomb competitions found.")
