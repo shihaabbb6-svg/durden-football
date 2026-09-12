@@ -7,6 +7,7 @@ from collector import (
     collect_caughtoffside,
     collect_news_trends
 )
+
 from content_engine import get_content_opportunity
 from live_collector import collect_live_matches
 from live_memory import detect_live_changes
@@ -23,8 +24,8 @@ from trend_memory import (
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = "816355804"
 
-def send_telegram_message(message):
 
+def send_telegram_message(message):
     url = (
         f"https://api.telegram.org/"
         f"bot{BOT_TOKEN}/sendMessage"
@@ -49,15 +50,14 @@ def send_telegram_message(message):
         return None
 
 
-print("\nDURDEN FOOTBALL V2")
+print("\nDURDEN FOOTBALL V3")
 print("==================")
-
 print("\nCollecting football intelligence...")
 
 
-# -------------------------
+# =========================
 # COLLECT
-# -------------------------
+# =========================
 
 stories = (
     collect_bbc()
@@ -67,28 +67,25 @@ stories = (
 
 news_trends = collect_news_trends()
 
-
 print(f"Stories collected: {len(stories)}")
 print(f"Momentum stories: {len(news_trends)}")
 
 
-# -------------------------
+# =========================
 # CLUSTER
-# -------------------------
+# =========================
 
 clusters = cluster_stories(stories)
 
 print(f"Story clusters: {len(clusters)}")
-
 print("\nDURDEN TREND ANALYSIS:\n")
-
 
 alerts = []
 
 
-# -------------------------
+# =========================
 # ANALYSE
-# -------------------------
+# =========================
 
 for cluster in clusters:
 
@@ -100,9 +97,7 @@ for cluster in clusters:
     })
 
     source_count = len(sources)
-
     trend_publishers = 0
-
 
     # -------------------------
     # NEWS MOMENTUM
@@ -114,12 +109,10 @@ for cluster in clusters:
             cluster[0]["title"],
             trend["title"]
         ):
-
             trend_publishers = max(
                 trend_publishers,
                 trend.get("publishers", 0)
             )
-
 
     if trend_publishers >= 2:
         score += 15
@@ -127,9 +120,8 @@ for cluster in clusters:
     if trend_publishers >= 5:
         score += 15
 
-
     # -------------------------
-    # MOMENTUM LABEL
+    # MOMENTUM
     # -------------------------
 
     momentum = "Normal"
@@ -139,7 +131,6 @@ for cluster in clusters:
 
     if trend_publishers >= 5:
         momentum = "High"
-
 
     # -------------------------
     # CONFIDENCE
@@ -153,9 +144,7 @@ for cluster in clusters:
     if source_count >= 3:
         confidence = "HIGH"
 
-
     title = cluster[0]["title"]
-
 
     print(
         f"[{score}] "
@@ -163,7 +152,6 @@ for cluster in clusters:
         f"[{momentum}] "
         f"{title}"
     )
-
 
     # -------------------------
     # ALERT FILTER
@@ -175,13 +163,11 @@ for cluster in clusters:
     if source_count < 2:
         continue
 
-    # Don't spam the same trend
     if not should_alert(title, score):
         continue
 
-
     # -------------------------
-    # CLASSIFY STORY
+    # CLASSIFY
     # -------------------------
 
     text = " ".join(
@@ -189,20 +175,19 @@ for cluster in clusters:
         for story in cluster
     )
 
-
     category = "Football News"
-
 
     if any(word in text for word in [
         "transfer",
         "sign",
+        "signs",
         "signed",
         "deal",
         "bid",
-        "contract"
+        "contract",
+        "agreement"
     ]):
         category = "Transfer"
-
 
     if any(word in text for word in [
         "injury",
@@ -211,14 +196,12 @@ for cluster in clusters:
     ]):
         category = "Injury"
 
-
     if any(word in text for word in [
         "red card",
         "sent off",
         "suspended"
     ]):
         category = "Match Incident"
-
 
     if any(word in text for word in [
         "sacked",
@@ -227,9 +210,8 @@ for cluster in clusters:
     ]):
         category = "Manager"
 
-
     # -------------------------
-    # BUILD ALERT
+    # CONTENT INTELLIGENCE
     # -------------------------
 
     content = get_content_opportunity(
@@ -237,7 +219,8 @@ for cluster in clusters:
         category,
         score,
         momentum,
-        sources
+        sources,
+        cluster
     )
 
     angles_text = "\n".join(
@@ -245,18 +228,31 @@ for cluster in clusters:
         for angle in content["angles"]
     )
 
+    # -------------------------
+    # BUILD USEFUL ALERT
+    # -------------------------
+
     alert = (
-        f"🔥 TREND SCORE: {score}/100\n\n"
+        f"🚨 TREND: {score}/100 | {momentum.upper()}\n\n"
+
         f"{title}\n\n"
-        f"Category: {category}\n"
-        f"Momentum: {momentum}\n"
+
+        f"📌 WHAT'S HAPPENING\n"
+        f"{content['context']}\n\n"
+
+        f"⚽ WHY IT MATTERS\n"
+        f"{content['why']}\n\n"
+
+        f"📈 CONTENT OPPORTUNITY: "
+        f"{content['opportunity']}\n\n"
+
+        f"💡 POST ANGLES\n"
+        f"{angles_text}\n\n"
+
+        f"🔎 {content['verification']}\n"
         f"Confidence: {confidence}\n"
-        f"Independent Sources: {source_count}\n"
         f"Sources: {', '.join(sources)}\n"
-        f"Publishers Tracking: {trend_publishers}\n\n"
-        f"📈 CONTENT OPPORTUNITY: {content['opportunity']}\n\n"
-        f"💡 CONTENT ANGLES\n"
-        f"{angles_text}"
+        f"Publishers Tracking: {trend_publishers}"
     )
 
     alerts.append({
@@ -266,9 +262,9 @@ for cluster in clusters:
     })
 
 
-# -------------------------
-# SORT STRONGEST FIRST
-# -------------------------
+# =========================
+# STRONGEST FIRST
+# =========================
 
 alerts.sort(
     key=lambda item: item["score"],
@@ -276,27 +272,25 @@ alerts.sort(
 )
 
 
-# -------------------------
-# TELEGRAM
-# -------------------------
+# =========================
+# TELEGRAM TREND RADAR
+# =========================
 
 if alerts:
 
     selected_alerts = alerts[:5]
 
     telegram_message = (
-        "🚨 DURDEN FOOTBALL RADAR\n\n"
+        "🚨 DURDEN FOOTBALL INTELLIGENCE\n\n"
         + "\n\n────────────\n\n".join(
             alert["message"]
             for alert in selected_alerts
         )
     )
 
-
     response = send_telegram_message(
         telegram_message
     )
-
 
     if response and response.ok:
 
@@ -305,30 +299,21 @@ if alerts:
             f"trend(s) to Telegram."
         )
 
-
-        # Remember only successfully sent alerts
-
         for alert in selected_alerts:
-
             remember_alert(
                 alert["title"],
                 alert["score"]
             )
 
     else:
-
         print("\nTelegram delivery failed.")
 
-
 else:
-
     print(
-        "\nNo new strong trends "
-        "worth alerting."
+        "\nNo new strong trends worth alerting."
     )
 
 
-print("\nDurden scan complete.")
 # =========================
 # LIVE MATCH RADAR
 # =========================
@@ -345,25 +330,23 @@ live_changes = detect_live_changes(
     live_matches
 )
 
-
 if live_changes:
 
     live_alerts = []
 
     for match in live_changes[:10]:
 
-        alert = (
+        live_alert = (
             f"⚡ LIVE MATCH UPDATE\n\n"
-            f"{match['title']}\n"
+            f"{match['title']}"
         )
 
         if match["description"]:
-            alert += (
-                f"\n{match['description']}"
+            live_alert += (
+                f"\n\n{match['description']}"
             )
 
-        live_alerts.append(alert)
-
+        live_alerts.append(live_alert)
 
     live_message = (
         "🔴 DURDEN LIVE RADAR\n\n"
@@ -372,27 +355,24 @@ if live_changes:
         )
     )
 
-
     response = send_telegram_message(
         live_message
     )
-
 
     if response and response.ok:
         print(
             f"Sent {len(live_alerts)} "
             f"live update(s)."
         )
-
     else:
         print(
             "Live Telegram delivery failed."
         )
 
-
 else:
-
     print(
         "No new live match changes."
     )
 
+
+print("\nDurden scan complete.")
