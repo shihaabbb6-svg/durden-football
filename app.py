@@ -397,34 +397,4 @@ else:
     print(
         "No new live match changes."
     )
-
-
-# -------------------------
-# GEMINI TEST
-# -------------------------
-
-test_cluster = [
-    {
-        "title": "Barcelona linked with a move for a new striker",
-        "source": "TestSource"
-    },
-    {
-        "title": "Barca considering striker options for next window",
-        "source": "TestSource2"
-    }
-]
-
-test_ai = generate_ai_content(
-    "Barcelona linked with a move for a new striker",
-    "Transfer",
-    80,
-    "Rising",
-    ["TestSource", "TestSource2"],
-    test_cluster
-)
-
-print("\nGEMINI TEST OUTPUT:\n")
-print(test_ai)
-
-
 print("\nDurden scan complete.")
