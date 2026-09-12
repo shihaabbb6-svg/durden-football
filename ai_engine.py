@@ -2,7 +2,6 @@ import os
 import requests
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
 GEMINI_MODEL = "gemini-3.5-flash"
 
 GEMINI_URL = (
@@ -32,21 +31,38 @@ def generate_ai_content(
 
     evidence = "\n".join(
         f"- {headline}"
-        for headline in headlines[:6]
+        for headline in headlines[:8]
     )
 
     source_text = ", ".join(sources)
 
     prompt = f"""
-You are the football intelligence and X content assistant
-for Durden Football.
+You are Durden Football, a football intelligence assistant
+built for someone trying to grow a football account on X.
 
-Analyse ONLY the information supplied below.
+Your job is NOT to rewrite news headlines.
 
-Do not invent transfers, quotes, statistics, injuries,
-tactical details or confirmations.
+Your job is to:
+1. Understand the developing story.
+2. Explain why football fans may care.
+3. Find an interesting angle for X.
+4. Look for a tactical angle when the evidence supports one.
+5. Create natural football-Twitter style drafts.
 
-If something is only reported, describe it as reported.
+IMPORTANT RULES:
+
+- Use ONLY the evidence supplied below.
+- Never invent quotes, transfer negotiations, statistics,
+  injuries, formations or tactical details.
+- If something is not confirmed, say "reported".
+- Do not pretend something is trending on X because we do
+  not currently have direct X trend data.
+- Do not copy headlines word-for-word.
+- Avoid corporate/AI writing.
+- Football-Twitter language should sound natural.
+- No hashtags.
+- No fake engagement bait.
+- Keep tweets concise.
 
 STORY:
 {title}
@@ -54,8 +70,8 @@ STORY:
 CATEGORY:
 {category}
 
-TREND SCORE:
-{score}
+DURDEN SCORE:
+{score}/100
 
 MOMENTUM:
 {momentum}
@@ -63,33 +79,48 @@ MOMENTUM:
 SOURCES:
 {source_text}
 
-HEADLINES:
+AVAILABLE EVIDENCE:
 {evidence}
 
-Return exactly this structure:
+
+Return EXACTLY this structure:
+
 
 WHAT HAPPENED:
-2-3 short sentences explaining the development.
+Give a clear 2-3 sentence summary.
 
-WHY IT MATTERS:
-2-3 short sentences explaining why football fans may care.
+WHY IT'S INTERESTING:
+Explain in 1-2 sentences why football fans may care.
 
-BEST ANGLE:
-One interesting angle that goes beyond simply repeating
-the headline. Do not invent facts.
+WHAT TO WATCH:
+Give the next development worth watching.
 
-X DRAFT:
-Write one short natural football-Twitter post.
-It should sound human, opinion-friendly and conversational.
-Do not make it sound like a news bot.
-Do not use hashtags.
-Do not copy the headline word-for-word.
-Do not invent information.
-Keep it under 260 characters.
+TACTICAL ANGLE:
+If there is a genuine tactical angle supported by the
+available evidence, explain it briefly.
+Otherwise write:
+"Not enough tactical evidence yet."
+
+BEST X ANGLE:
+Give ONE specific angle worth posting about that goes
+beyond repeating the news.
+
+X DRAFT 1:
+Write a short natural football-Twitter reaction.
+Maximum 260 characters.
+
+X DRAFT 2:
+Write a different version that is more opinionated or
+discussion-oriented.
+Maximum 260 characters.
 
 VERIFY:
-Say either STRONG, MEDIUM or VERIFY FIRST, followed by
-one short reason.
+Write one of:
+STRONG
+MEDIUM
+VERIFY FIRST
+
+Then explain the reason in one short sentence.
 """
 
     headers = {
@@ -108,8 +139,8 @@ one short reason.
             }
         ],
         "generationConfig": {
-            "temperature": 0.7,
-            "maxOutputTokens": 700
+            "temperature": 0.8,
+            "maxOutputTokens": 1000
         }
     }
 
