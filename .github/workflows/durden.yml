@@ -21,7 +21,26 @@ jobs:
       - name: Install requirements
         run: pip install -r requirements.txt
 
+      - name: Restore Durden memory
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            trend_memory.json
+            live_memory.json
+          key: durden-memory-${{ github.run_id }}
+          restore-keys: |
+            durden-memory-
+
       - name: Run Durden
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         run: python app.py
+
+      - name: Save Durden memory
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            trend_memory.json
+            live_memory.json
+          key: durden-memory-${{ github.run_id }}
