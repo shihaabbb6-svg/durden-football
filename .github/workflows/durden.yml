@@ -32,9 +32,10 @@ jobs:
             durden-memory-
 
       - name: Run Durden
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-        run: python app.py
+  env:
+    TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+    GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+  run: python app.py
 
       - name: Save Durden memory
         if: always()
