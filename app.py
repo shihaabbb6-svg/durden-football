@@ -7,7 +7,7 @@ from collector import (
     collect_caughtoffside,
     collect_news_trends
 )
-
+from content_engine import get_content_opportunity
 from live_collector import collect_live_matches
 from live_memory import detect_live_changes
 
@@ -232,6 +232,19 @@ for cluster in clusters:
     # BUILD ALERT
     # -------------------------
 
+    content = get_content_opportunity(
+        title,
+        category,
+        score,
+        momentum,
+        sources
+    )
+
+    angles_text = "\n".join(
+        f"• {angle}"
+        for angle in content["angles"]
+    )
+
     alert = (
         f"🔥 TREND SCORE: {score}/100\n\n"
         f"{title}\n\n"
@@ -240,9 +253,11 @@ for cluster in clusters:
         f"Confidence: {confidence}\n"
         f"Independent Sources: {source_count}\n"
         f"Sources: {', '.join(sources)}\n"
-        f"Publishers Tracking: {trend_publishers}"
+        f"Publishers Tracking: {trend_publishers}\n\n"
+        f"📈 CONTENT OPPORTUNITY: {content['opportunity']}\n\n"
+        f"💡 CONTENT ANGLES\n"
+        f"{angles_text}"
     )
-
 
     alerts.append({
         "message": alert,
