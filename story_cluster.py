@@ -1,163 +1,119 @@
-BREAKING_WORDS = {
-    "breaking",
-    "exclusive",
-    "confirmed",
-    "official",
-    "agreed",
-    "agreement",
-    "sign",
-    "signs",
-    "signed",
-    "transfer",
-    "deal",
-    "bid",
-    "offer",
-    "injury",
-    "injured",
-    "sacked",
-    "dismissed",
-    "red card",
-    "suspended"
+import re
+
+
+IGNORE_WORDS = {
+    "the", "a", "an", "and", "or", "to", "of", "in", "on",
+    "for", "with", "as", "at", "is", "are", "was", "were",
+    "be", "been", "from", "about", "after", "before", "this",
+    "that", "could", "would", "should", "has", "have", "had",
+    "says", "say", "report", "reports", "latest"
 }
 
 
-HIGH_INTEREST_WORDS = {
-    "barcelona",
-    "barca",
-    "real madrid",
-    "arsenal",
-    "chelsea",
-    "liverpool",
-    "manchester united",
-    "man utd",
-    "manchester city",
-    "bayern",
-    "psg",
-    "atletico",
-    "tottenham"
-}
+def normalize(text):
+    text = text.lower()
 
-
-DEBATE_WORDS = {
-    "controversy",
-    "controversial",
-    "VAR",
-    "penalty",
-    "red card",
-    "reaction",
-    "criticism",
-    "criticised",
-    "slams",
-    "furious",
-    "booed",
-    "boos",
-    "referee"
-}
-
-
-def calculate_cluster_score(cluster):
-
-    score = 10
-
-    if not cluster:
-        return score
-
-    # --------------------------------
-    # SOURCE STRENGTH
-    # --------------------------------
-
-    unique_sources = {
-        story.get("source", "Unknown")
-        for story in cluster
+    replacements = {
+        "man utd": "manchester united",
+        "man united": "manchester united",
+        "man city": "manchester city",
+        "barca": "barcelona",
+        "atleti": "atletico madrid",
+        "spurs": "tottenham"
     }
 
-    source_count = len(unique_sources)
+    for old, new in replacements.items():
+        text = text.replace(old, new)
 
-    if source_count >= 2:
-        score += 30
+    return text
 
-    if source_count >= 3:
-        score += 20
 
-    if source_count >= 4:
-        score += 15
+def get_words(title):
+    title = normalize(title)
 
-    # --------------------------------
-    # NUMBER OF REPORTS
-    # --------------------------------
+    words = re.findall(r"[a-z0-9£€$]+", title)
 
-    if len(cluster) >= 3:
-        score += 10
+    return {
+        word
+        for word in words
+        if word not in IGNORE_WORDS
+        and len(word) > 2
+    }
 
-    if len(cluster) >= 5:
-        score += 10
 
-    # --------------------------------
-    # FAST SOURCE
-    # --------------------------------
+def similarity_score(title1, title2):
+    words1 = get_words(title1)
+    words2 = get_words(title2)
 
-    if any(
-        story.get("type") == "fast"
-        for story in cluster
-    ):
-        score += 10
+    if not words1 or not words2:
+        return 0
 
-    # --------------------------------
-    # COMBINE STORY TEXT
-    # --------------------------------
+    common = words1.intersection(words2)
+    union = words1.union(words2)
 
-    combined_text = " ".join(
-        story.get("title", "").lower()
-        for story in cluster
+    if not union:
+        return 0
+
+    jaccard = len(common) / len(union)
+
+    smaller = min(
+        len(words1),
+        len(words2)
     )
 
-    # --------------------------------
-    # BREAKING / DEVELOPING STORY
-    # --------------------------------
+    overlap = len(common) / smaller
 
-    if any(
-        word.lower() in combined_text
-        for word in BREAKING_WORDS
-    ):
-        score += 10
+    return max(jaccard, overlap)
 
-    # --------------------------------
-    # HIGH-INTEREST CLUBS
-    # --------------------------------
 
-    if any(
-        club in combined_text
-        for club in HIGH_INTEREST_WORDS
-    ):
-        score += 5
+def same_story(title1, title2):
+    words1 = get_words(title1)
+    words2 = get_words(title2)
 
-    # --------------------------------
-    # FAN DEBATE / VIRAL POTENTIAL
-    # --------------------------------
+    common = words1.intersection(words2)
 
-    if any(
-        word.lower() in combined_text
-        for word in DEBATE_WORDS
-    ):
-        score += 10
-
-    # --------------------------------
-    # NEWS MOMENTUM SIGNAL
-    # --------------------------------
-
-    publishers = max(
-        (
-            story.get("publishers", 0)
-            for story in cluster
-        ),
-        default=0
+    score = similarity_score(
+        title1,
+        title2
     )
 
-    if publishers >= 2:
-        score += 10
+    if len(common) >= 3 and score >= 0.45:
+        return True
 
-    if publishers >= 5:
-        score += 10
+    if len(common) >= 2 and score >= 0.70:
+        return True
 
-    # Never show impossible scores like 125/100
-    return min(score, 100)
+    return False
+
+
+def cluster_stories(stories):
+    clusters = []
+
+    for story in stories:
+        best_cluster = None
+        best_score = 0
+
+        for cluster in clusters:
+            for existing_story in cluster:
+
+                score = similarity_score(
+                    story["title"],
+                    existing_story["title"]
+                )
+
+                if (
+                    same_story(
+                        story["title"],
+                        existing_story["title"]
+                    )
+                    and score > best_score
+                ):
+                    best_score = score
+                    best_cluster = cluster
+
+        if best_cluster is not None:
+            best_cluster.append(story)
+        else:
+            clusters.append([story])
+
+    return clusters
