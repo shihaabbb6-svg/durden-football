@@ -9,6 +9,7 @@ from collector import (
 )
 
 from content_engine import get_content_opportunity
+from ai_engine import generate_ai_content
 from live_collector import collect_live_matches
 from live_memory import detect_live_changes
 
