@@ -1,6 +1,11 @@
 import os
 import requests
-
+from tactical_engine import (
+    get_competitions,
+    get_matches,
+    get_events,
+    analyse_match_events
+)
 from collector import (
     collect_bbc,
     collect_football365,
@@ -398,3 +403,16 @@ else:
         "No new live match changes."
     )
 print("\nDurden scan complete.")
+
+# =========================
+# TACTICAL ENGINE TEST
+# =========================
+
+print("\nTesting tactical engine...")
+
+competitions = get_competitions()
+
+print(
+    f"StatsBomb competitions available: "
+    f"{len(competitions)}"
+)
