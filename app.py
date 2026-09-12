@@ -223,6 +223,18 @@ for cluster in clusters:
         sources,
         cluster
     )
+        # -------------------------
+    # GEMINI AI ANALYSIS
+    # -------------------------
+
+    ai_content = generate_ai_content(
+        title,
+        category,
+        score,
+        momentum,
+        sources,
+        cluster
+    )
 
     angles_text = "\n".join(
         f"• {angle}"
@@ -233,29 +245,40 @@ for cluster in clusters:
     # BUILD USEFUL ALERT
     # -------------------------
 
-    alert = (
-        f"🚨 TREND: {score}/100 | {momentum.upper()}\n\n"
+      # -------------------------
+    # BUILD USEFUL ALERT
+    # -------------------------
 
-        f"{title}\n\n"
+    if ai_content:
+        alert = (
+            f"🚨 TREND: {score}/100 | {momentum.upper()}\n\n"
+            f"{title}\n\n"
+            f"🤖 DURDEN AI INTELLIGENCE\n\n"
+            f"{ai_content}\n\n"
+            f"🔎 SIGNAL DATA\n"
+            f"Category: {category}\n"
+            f"Confidence: {confidence}\n"
+            f"Independent Sources: {source_count}\n"
+            f"Sources: {', '.join(sources)}\n"
+            f"Publishers Tracking: {trend_publishers}"
+        )
 
-        f"📌 WHAT'S HAPPENING\n"
-        f"{content['context']}\n\n"
-
-        f"⚽ WHY IT MATTERS\n"
-        f"{content['why']}\n\n"
-
-        f"📈 CONTENT OPPORTUNITY: "
-        f"{content['opportunity']}\n\n"
-
-        f"💡 POST ANGLES\n"
-        f"{angles_text}\n\n"
-
-        f"🔎 {content['verification']}\n"
-        f"Confidence: {confidence}\n"
-        f"Sources: {', '.join(sources)}\n"
-        f"Publishers Tracking: {trend_publishers}"
-    )
-
+    else:
+        # Fallback if Gemini is unavailable
+        alert = (
+            f"🚨 TREND: {score}/100 | {momentum.upper()}\n\n"
+            f"{title}\n\n"
+            f"📌 WHAT'S HAPPENING\n"
+            f"{content['context']}\n\n"
+            f"⚽ WHY IT MATTERS\n"
+            f"{content['why']}\n\n"
+            f"📈 CONTENT OPPORTUNITY: "
+            f"{content['opportunity']}\n\n"
+            f"💡 POST ANGLES\n"
+            f"{angles_text}\n\n"
+            f"🔎 {content['verification']}\n"
+            f"Sources: {', '.join(sources)}"
+        )
     alerts.append({
         "message": alert,
         "title": title,
